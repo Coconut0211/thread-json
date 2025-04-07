@@ -3,7 +3,7 @@ import json, sequtils
 import parsecsv
 
 proc toJson(data: seq[tuple[k, v: string]]): JsonNode =
-  ## Функция реализует преобразование строки данных в JSON-ноду
+  ## Функция реализует преобразование данных в JSON-ноду
 
 proc readCSV(filename: string): seq[JsonNode] =
   ## Функция реализует чтение данных из принятого файла
