@@ -3,12 +3,10 @@ import json, sequtils,strutils
 import parsecsv
 
 proc toJson(data: seq[tuple[k, v: string]]): JsonNode =
-  var s = "{"
+  result = newJObject()
   for item in data:
-    s.add(""""$1":"$2",""" % [item.k,item.v])
-  s.add("}")
-  parseJson(s)
-  
+    result.add(item.k, %* item.v)
+
 proc readCSV(filename: string): seq[JsonNode] =
   var csv: CsvParser
   csv.open(filename)
@@ -21,9 +19,8 @@ proc loadCSV(filename: string) {. thread .} =
   echo (%* readCSV(filename)).pretty
 
 when isMainModule:
-  var threads: array[9 ,Thread[string]]
-  var i = 0
-  for item in walkDir("data"):
-    createThread(threads[i],loadCSV,item.path)
-    i += 1
+  let files = walkDirRec("data").toSeq.filter(proc(x: string): bool = x.splitFile.ext  == ".csv")
+  var threads =  newSeq[Thread[string]](len(files))
+  for i in threads.low .. threads.high:
+    createThread(threads[i], loadCSV, files[i])
   joinThreads(threads)
