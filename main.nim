@@ -1,24 +1,26 @@
 import os
-import json, sequtils
+import json, sequtils,strutils
 import parsecsv
 
 proc toJson(data: seq[tuple[k, v: string]]): JsonNode =
-  ## Функция реализует преобразование данных в JSON-ноду
+  result = newJObject()
+  for item in data:
+    result[item.k] = %* item.v
 
 proc readCSV(filename: string): seq[JsonNode] =
-  ## Функция реализует чтение данных из принятого файла
-  ## и упаковывает их в последовательность Json-нод
   var csv: CsvParser
-  # Загрузите заголовок
-  # Зачитайте строки из файла, создайте Json-ноду и добавьте их в result
-  # Для простоты, рекомендуется воспользоваться функцией zip из sequtils
+  csv.open(filename)
+  csv.readHeaderRow()
+  while  csv.readRow():
+    result.add(toJson(zip(csv.headers,csv.row)))
+  csv.close()
 
 proc loadCSV(filename: string) {. thread .} =
-  ## На данный момент, функция всего лишь
-  ## отображает результат чтения данных из CSV
-  ## Именно эта функция должна вызываться в потоке
   echo (%* readCSV(filename)).pretty
 
 when isMainModule:
-  ## Обработайте файле в многопоточном режиме
-  ## Количество потоков == количеству файлов в папке "data"
+  let files = walkFiles("data" / "*.csv").toSeq
+  var threads =  newSeq[Thread[string]](len(files))
+  for i in threads.low .. threads.high:
+    createThread(threads[i], loadCSV, files[i])
+  joinThreads(threads)
